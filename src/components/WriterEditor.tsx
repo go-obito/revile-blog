@@ -76,10 +76,20 @@ export default function WriterEditor() {
           Draft mode
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-700">
+          <button
+            type="submit"
+            name="status"
+            value="draft"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
+          >
             Save draft
           </button>
-          <button type="button" className="primary-button nav-cta rounded-full px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-600/20">
+          <button
+            type="submit"
+            name="status"
+            value="published"
+            className="primary-button nav-cta rounded-full px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-600/20"
+          >
             Publish
           </button>
         </div>

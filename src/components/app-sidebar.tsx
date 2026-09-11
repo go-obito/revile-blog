@@ -19,7 +19,7 @@ export function AppSidebar() {
 	return (
 		<Sidebar
 			className="static min-h-full *:data-[slot=sidebar-inner]:bg-background"
-			collapsible="offExamples"
+			collapsible="offcanvas"
 			variant="sidebar"
 		>
 			<SidebarHeader className="relative h-14 justify-center px-2 py-0">
