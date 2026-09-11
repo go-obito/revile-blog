@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { Montserrat, Poppins, Roboto } from "next/font/google";
+import { Montserrat, Poppins, Roboto, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const montserrat = Montserrat({
   variable: "--font-logo",
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${poppins.variable} ${roboto.variable} h-full antialiased`}>
+    <html lang="en" className={cn("h-full", "antialiased", montserrat.variable, poppins.variable, roboto.variable, "font-sans", geist.variable)}>
       <body className="min-h-full bg-[#f5f7fb] text-slate-900">{children}</body>
     </html>
   );
