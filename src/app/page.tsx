@@ -3,6 +3,7 @@ import Link from "next/link";
 import { dbConnect } from "@/lib/db";
 import { Post } from "@/lib/models/Post";
 import { serializePost } from "@/lib/serialize";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const NAV_ITEMS = [
   { label: "Latest", href: "/" },
@@ -12,19 +13,26 @@ const NAV_ITEMS = [
 ];
 
 export default async function HomePage() {
-  await dbConnect();
-  const posts = await Post.find({ status: "published" })
-    .sort({ publishedAt: -1, createdAt: -1 })
-    .limit(8)
-    .lean();
+  let items: Awaited<ReturnType<typeof serializePost>>[] = [];
 
-  const items = posts.map((post) => serializePost(post as Parameters<typeof serializePost>[0]));
+  try {
+    await dbConnect();
+    const posts = await Post.find({ status: "published" })
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .limit(8)
+      .lean();
+
+    items = posts.map((post) => serializePost(post as Parameters<typeof serializePost>[0]));
+  } catch {
+    items = [];
+  }
+
   const trending = items[0];
   const rest = items.slice(1);
 
   return (
     <main className="news-shell min-h-screen text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-0 pt-6 sm:px-6 lg:px-8">
         <header className="rounded-full border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center justify-between gap-4 md:justify-start">
@@ -136,6 +144,8 @@ export default async function HomePage() {
             ))}
           </section>
         ) : null}
+
+        <SiteFooter />
       </div>
     </main>
   );

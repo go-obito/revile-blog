@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI ?? "";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI is not set");
+  throw new Error("MONGODB_URI is not set. Add your MongoDB connection string to the environment before starting the app.");
 }
+
+const mongoUri: string = MONGODB_URI;
 
 type MongooseCache = {
   conn: typeof mongoose | null;
@@ -30,7 +32,7 @@ export async function dbConnect() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI);
+    cached.promise = mongoose.connect(mongoUri);
   }
 
   cached.conn = await cached.promise;

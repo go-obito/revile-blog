@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/revile-blog";
+const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  throw new Error("MONGODB_URI is not set. Add your MongoDB connection string before running the seed script.");
+}
 
 const postSchema = new mongoose.Schema(
   {
