@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Revile Blog
 
-## Getting Started
+A personal news-style blog built with Next.js App Router, TypeScript, Tailwind, and MongoDB. The public site and admin panel both consume the same route handlers for a headless CMS workflow.
 
-First, run the development server:
+## Local setup
+
+1. Copy `.env.example` to `.env` and set your values.
+2. Start a local MongoDB instance:
+   - `docker compose up -d`
+   - or run `mongod` locally if you already have MongoDB installed.
+3. Confirm the connection string is valid:
+   - `MONGODB_URI=mongodb://127.0.0.1:27017/revile-blog`
+   - `SESSION_SECRET=replace-with-a-long-random-string-at-least-32-chars`
+4. Install dependencies and start the app:
+   - `npm install`
+   - `npm run dev`
+5. Open `http://localhost:3000` and create the first admin account at `/admin/signup`.
+
+## First admin signup
+
+The first user to sign up becomes the sole admin. The signup route enforces this server-side before creating the `AdminUser` document. After the first admin exists, the page redirects to `/admin/login` and the public signup flow is no longer available.
+
+## Seed demo content
+
+Populate a few published posts for the home page and tagged list:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+node scripts/seed.mjs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Routes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Public home: `/`
+- Post detail: `/posts/[slug]`
+- Tag archive: `/tags/[tag]`
+- Admin login: `/admin/login`
+- Admin dashboard: `/admin`
+- Comment moderation: `/admin/comments`
+- Insights: `/admin/insights`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notes
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Markdown is stored in the post body and rendered with a markdown viewer.
+- Comments default to `pending` until an admin approves them.
+- Uploaded cover and inline images are stored in `public/uploads` and exposed as static files.
