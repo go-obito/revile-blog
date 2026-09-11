@@ -133,6 +133,21 @@ export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
     { $sort: { _id: 1 } },
   ]);
 
+  const previousSeries = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", createdAt: { $gte: previousWindowRange.start, $lte: previousWindowRange.end } } },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+          day: { $dayOfMonth: "$createdAt" },
+        },
+        views: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
   const seriesMap = new Map(
     currentSeries.map((item) => [
       `${String(item._id.year)}-${String(item._id.month).padStart(2, "0")}-${String(item._id.day).padStart(2, "0")}`,
@@ -140,13 +155,35 @@ export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
     ]),
   );
 
+  const previousSeriesMap = new Map(
+    previousSeries.map((item) => [
+      `${String(item._id.year)}-${String(item._id.month).padStart(2, "0")}-${String(item._id.day).padStart(2, "0")}`,
+      item.views,
+    ]),
+  );
+
   const points: Array<{ date: string; views: number }> = [];
+  const previousPoints: Array<{ date: string; views: number }> = [];
   const cursor = new Date(currentWindow.start);
+  const previousCursor = new Date(previousWindowRange.start);
+
   while (cursor <= currentWindow.end) {
     const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
     points.push({ date: key, views: seriesMap.get(key) ?? 0 });
     cursor.setDate(cursor.getDate() + 1);
   }
+
+  while (previousCursor <= previousWindowRange.end) {
+    const key = `${previousCursor.getFullYear()}-${String(previousCursor.getMonth() + 1).padStart(2, "0")}-${String(previousCursor.getDate()).padStart(2, "0")}`;
+    previousPoints.push({ date: key, views: previousSeriesMap.get(key) ?? 0 });
+    previousCursor.setDate(previousCursor.getDate() + 1);
+  }
+
+  const currentAverage = points.length ? points.reduce((sum, point) => sum + point.views, 0) / points.length : 0;
+  const previousAverage = previousPoints.length ? previousPoints.reduce((sum, point) => sum + point.views, 0) / previousPoints.length : 0;
+  const engagementRate = Number(currentAverage.toFixed(1));
+  const previousEngagementRate = Number(previousAverage.toFixed(1));
+  const engagementDelta = Number((((engagementRate - previousEngagementRate) / Math.max(previousEngagementRate, 1)) * 100).toFixed(1));
 
   return {
     summary: {
@@ -155,13 +192,18 @@ export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
       totalPosts: totalPosts,
       totalComments: totalComments,
       pendingComments: pendingComments,
+      engagementRate,
+      engagementDelta,
     },
     metrics: {
       viewsDelta: formatDelta(currentViews, previousViews),
+      viewsPrevious: previousViews,
       visitorsDelta: formatDelta(uniqueCurrent, uniquePrevious),
+      visitorsPrevious: uniquePrevious,
       postsDelta: 0,
       commentsDelta: 0,
       pendingDelta: 0,
+      engagementRateDelta: engagementDelta,
     },
     chart: points,
     topPosts,
