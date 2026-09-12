@@ -18,22 +18,12 @@ import {
 } from "@/components/ui/chart";
 import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 
-const chartData = [
-	{ month: "January", visitors: 555 },
-	{ month: "February", visitors: 904 },
-	{ month: "March", visitors: 727 },
-	{ month: "April", visitors: 801 },
-	{ month: "May", visitors: 942 },
-	{ month: "June", visitors: 1048 },
-	{ month: "July", visitors: 702 },
-	{ month: "August", visitors: 1103 },
-	{ month: "September", visitors: 879 },
-	{ month: "October", visitors: 1046 },
-	{ month: "November", visitors: 1407 },
-	{ month: "December", visitors: 548 },
-];
-
-const totalVisitors = chartData.reduce((sum, row) => sum + row.visitors, 0);
+type VisitorsChartPoint = {
+	month?: string;
+	date?: string;
+	visitors?: number;
+	views?: number;
+};
 
 const chartConfig = {
 	visitors: {
@@ -42,7 +32,27 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-export function VisitorsChart() {
+export function VisitorsChart({
+	rows,
+	totalVisitors: total,
+	deltaValue,
+}: {
+	rows?: VisitorsChartPoint[];
+	totalVisitors?: number;
+	deltaValue?: number;
+}) {
+	const chartData = (rows ?? []).map((row) => {
+		const rawDate = row.date ?? row.month ?? "";
+		const date = rawDate ? new Date(rawDate) : null;
+		const label = row.month ?? (date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-US", { month: "short" }) : rawDate);
+		return {
+			month: label || "N/A",
+			visitors: Number(row.visitors ?? row.views ?? 0),
+		};
+	});
+
+	const totalVisitors = Number(total ?? chartData.reduce((sum, row) => sum + row.visitors, 0));
+	const delta = Number(deltaValue ?? 0);
 	const gradientId = `visitors-area-${useId().replace(/:/g, "")}`;
 
 	return (
@@ -56,72 +66,54 @@ export function VisitorsChart() {
 						Total visitors in the last 12 months.
 					</CardDescription>
 				</div>
-				<Delta value={7.2} variant="badge">
+				<Delta value={delta} variant="badge">
 					<DeltaIcon variant="trend" />
 					<DeltaValue suffix="%" />
-					<span>vs prior 12 months</span>
+					<span>vs prior period</span>
 				</Delta>
 			</CardHeader>
 			<CardContent>
-				<ChartContainer
-					className="aspect-auto h-60 w-full"
-					config={chartConfig}
-				>
-					<AreaChart
-						accessibilityLayer
-						data={chartData}
-						margin={{
-							left: 12,
-							right: 12,
-						}}
-					>
-						<defs>
-							<linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-								<stop
-									offset="0%"
-									stopColor="var(--color-visitors)"
-									stopOpacity={0.35}
-								/>
-								<stop
-									offset="100%"
-									stopColor="var(--color-visitors)"
-									stopOpacity={0}
-								/>
-							</linearGradient>
-						</defs>
-						<CartesianGrid vertical={false} />
-						<XAxis
-							axisLine={false}
-							dataKey="month"
-							tickFormatter={(value) => String(value).slice(0, 3)}
-							tickLine={false}
-							tickMargin={8}
-						/>
-						<ChartTooltip
-							content={<ChartTooltipContent indicator="dashed" />}
-							cursor={{
-								stroke: "var(--color-visitors)",
-								strokeDasharray: "3 3",
-								strokeLinecap: "round",
-							}}
-							wrapperStyle={{ outline: "none" }}
-						/>
-						<Area
-							dataKey="visitors"
-							dot={{
-								fill: "var(--color-visitors)",
-								r: 2.5,
-								strokeWidth: 2,
-							}}
-							fill={`url(#${gradientId})`}
-							isAnimationActive={false}
-							name={chartConfig.visitors.label}
-							stroke="var(--color-visitors)"
-							strokeWidth={2}
-							type="linear"
-						/>
-					</AreaChart>
-				</ChartContainer>
+				{chartData.length ? (
+					<ChartContainer className="aspect-auto h-60 w-full" config={chartConfig}>
+						<AreaChart
+							accessibilityLayer
+							data={chartData}
+							margin={{ left: 12, right: 12 }}
+						>
+							<defs>
+								<linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+									<stop offset="0%" stopColor="var(--color-visitors)" stopOpacity={0.35} />
+									<stop offset="100%" stopColor="var(--color-visitors)" stopOpacity={0} />
+								</linearGradient>
+							</defs>
+							<CartesianGrid vertical={false} />
+							<XAxis
+								axisLine={false}
+								dataKey="month"
+								tickFormatter={(value) => String(value).slice(0, 3)}
+								tickLine={false}
+								tickMargin={8}
+							/>
+							<ChartTooltip
+								content={<ChartTooltipContent indicator="dashed" />}
+								cursor={{ stroke: "var(--color-visitors)", strokeDasharray: "3 3", strokeLinecap: "round" }}
+								wrapperStyle={{ outline: "none" }}
+							/>
+							<Area
+								dataKey="visitors"
+								dot={{ fill: "var(--color-visitors)", r: 2.5, strokeWidth: 2 }}
+								fill={`url(#${gradientId})`}
+								isAnimationActive={false}
+								name={chartConfig.visitors.label}
+								stroke="var(--color-visitors)"
+								strokeWidth={2}
+								type="linear"
+							/>
+						</AreaChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-60 items-center justify-center text-sm text-muted-foreground">No visitor trend data available yet.</div>
+				)}
 			</CardContent>
 		</Card>
 	);

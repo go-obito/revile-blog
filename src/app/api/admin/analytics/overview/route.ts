@@ -33,6 +33,7 @@ export async function GET(request: Request) {
       chart: analytics.chart,
       topPosts: analytics.topPosts,
       sources: analytics.sources,
+      dashboard: analytics.dashboard,
       recentActivity: analytics.recentActivity,
       recentPosts: posts.map((post) => ({
         id: String(post._id),

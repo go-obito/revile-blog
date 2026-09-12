@@ -14,6 +14,10 @@ export type AnalyticsEventDocument = mongoose.Document & {
   visitorId?: string | null;
   referrer?: string | null;
   userAgent?: string | null;
+  browser?: string | null;
+  device?: string | null;
+  country?: string | null;
+  ip?: string | null;
   createdAt: Date;
 };
 
@@ -31,6 +35,10 @@ const AnalyticsEventSchema = new Schema<AnalyticsEventDocument>(
     visitorId: { type: String, default: null },
     referrer: { type: String, default: null, maxlength: 500 },
     userAgent: { type: String, default: null, maxlength: 500 },
+    browser: { type: String, default: null, maxlength: 40 },
+    device: { type: String, default: null, maxlength: 40 },
+    country: { type: String, default: null, maxlength: 2 },
+    ip: { type: String, default: null, maxlength: 45 },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: false },
@@ -41,6 +49,9 @@ AnalyticsEventSchema.index({ type: 1, createdAt: -1 });
 AnalyticsEventSchema.index({ path: 1, createdAt: -1 });
 AnalyticsEventSchema.index({ postId: 1, createdAt: -1 });
 AnalyticsEventSchema.index({ visitorId: 1, createdAt: -1 });
+AnalyticsEventSchema.index({ country: 1, createdAt: -1 });
+AnalyticsEventSchema.index({ browser: 1, createdAt: -1 });
+AnalyticsEventSchema.index({ device: 1, createdAt: -1 });
 
 export const AnalyticsEvent =
   mongoose.models.AnalyticsEvent ||

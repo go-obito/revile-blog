@@ -12,12 +12,12 @@ export function AppShell({
 }) {
 	return (
 		<div className="overflow-hidden">
-			<SidebarProvider className="relative mx-auto h-svh w-full max-w-5xl lg:border-x">
+			<SidebarProvider className="relative mx-auto h-svh w-full max-w-[1600px] lg:border-x">
 				<FullWidthDivider className="top-14 z-60 -translate-y-px" />
 				<AppSidebar userEmail={userEmail} />
 				<SidebarInset>
 					<AppHeader />
-					<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 md:p-6">
+					<div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4 md:p-6 xl:p-8">
 						{children}
 					</div>
 				</SidebarInset>

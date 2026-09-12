@@ -16,35 +16,31 @@ import {
 	ShareBarListValue,
 } from "@/components/share-bar-list";
 
-const browsers = [
-	{ label: "Chrome", share: 58 },
-	{ label: "Safari", share: 22 },
-	{ label: "Edge", share: 9 },
-	{ label: "Firefox", share: 7 },
-	{ label: "Other", share: 4 },
-] as const;
+export function BrowserShare({ rows: browserRows }: { rows?: Array<{ label: string; share: number }> }) {
+	const data = browserRows ?? [];
 
-export function BrowserShare() {
 	return (
 		<Card className="dark:bg-transparent">
 			<CardHeader className="border-b">
 				<CardTitle className="text-balance">Browsers</CardTitle>
-				<CardDescription className="text-pretty">
-					Share of sessions by primary browser family.
-				</CardDescription>
+				<CardDescription className="text-pretty">Share of sessions by primary browser family.</CardDescription>
 			</CardHeader>
 			<CardContent className="p-0 py-1">
-				<ShareBarList aria-label="Sessions by browser">
-					{browsers.map((row) => (
-						<ShareBarListItem key={row.label} value={row.share}>
-							<ShareBarListContent>
-								<ShareBarListLabel>{row.label}</ShareBarListLabel>
-								<ShareBarListValue>{row.share}%</ShareBarListValue>
-							</ShareBarListContent>
-							<ShareBarListFill />
-						</ShareBarListItem>
-					))}
-				</ShareBarList>
+				{data.length ? (
+					<ShareBarList aria-label="Sessions by browser">
+						{data.map((row) => (
+							<ShareBarListItem key={row.label} value={row.share}>
+								<ShareBarListContent>
+									<ShareBarListLabel>{row.label}</ShareBarListLabel>
+									<ShareBarListValue>{row.share}%</ShareBarListValue>
+								</ShareBarListContent>
+								<ShareBarListFill />
+							</ShareBarListItem>
+						))}
+					</ShareBarList>
+				) : (
+					<div className="flex min-h-[160px] items-center justify-center px-6 text-sm text-muted-foreground">No browser data available yet.</div>
+				)}
 			</CardContent>
 		</Card>
 	);

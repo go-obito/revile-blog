@@ -68,6 +68,45 @@ export function formatDelta(current: number, previous: number) {
   return Number.isFinite(diff) ? diff : 0;
 }
 
+function normalizeHostname(referrer?: string | null) {
+  if (!referrer) return "direct";
+
+  try {
+    const host = new URL(referrer).hostname.replace(/^www\./i, "");
+    return host || "direct";
+  } catch {
+    return referrer.replace(/^https?:\/\//i, "").split("/")[0] || "direct";
+  }
+}
+
+function inferBrowser(userAgent?: string | null) {
+  const value = (userAgent ?? "").toLowerCase();
+
+  if (value.includes("edg")) return "Edge";
+  if (value.includes("opr") || value.includes("opera")) return "Opera";
+  if (value.includes("firefox")) return "Firefox";
+  if (value.includes("chrome")) return "Chrome";
+  if (value.includes("safari")) return "Safari";
+  return "Other";
+}
+
+function inferDevice(userAgent?: string | null) {
+  const value = (userAgent ?? "").toLowerCase();
+
+  if (value.includes("ipad") || value.includes("tablet")) return "Tablet";
+  if (value.includes("mobile") || value.includes("android") || value.includes("iphone")) return "Mobile";
+  return "Desktop";
+}
+
+function getCountryFromHeaders(headersList: Headers) {
+  return (
+    headersList.get("x-vercel-ip-country") ||
+    headersList.get("cf-ipcountry") ||
+    headersList.get("x-country-code") ||
+    null
+  );
+}
+
 export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
   await dbConnect();
 
@@ -185,6 +224,113 @@ export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
   const previousEngagementRate = Number(previousAverage.toFixed(1));
   const engagementDelta = Number((((engagementRate - previousEngagementRate) / Math.max(previousEngagementRate, 1)) * 100).toFixed(1));
 
+  const topPagesAggregated = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    { $group: { _id: "$path", visits: { $sum: 1 } } },
+    { $sort: { visits: -1, _id: 1 } },
+    { $limit: 5 },
+  ]);
+
+  const previousTopPagesAggregated = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", createdAt: { $gte: previousWindowRange.start, $lte: previousWindowRange.end } } },
+    { $group: { _id: "$path", visits: { $sum: 1 } } },
+  ]);
+
+  const previousTopPagesMap = new Map(
+    previousTopPagesAggregated.map((item) => [String(item._id), Number(item.visits) || 0]),
+  );
+
+  const topPages = topPagesAggregated.map((item) => {
+    const path = String(item._id || "/");
+    const visits = Number(item.visits) || 0;
+    const previousVisits = previousTopPagesMap.get(path) ?? 0;
+    const delta = previousVisits === 0 ? 0 : Number((((visits - previousVisits) / previousVisits) * 100).toFixed(1));
+
+    return { path, visits, delta };
+  });
+
+  const countryBreakdown = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", country: { $ne: null }, createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    { $group: { _id: "$country", visits: { $sum: 1 } } },
+    { $sort: { visits: -1, _id: 1 } },
+    { $limit: 6 },
+  ]);
+
+  const topCountries = countryBreakdown.map((item) => ({
+    code: String(item._id || "US"),
+    visits: Number(item.visits) || 0,
+    delta: 0,
+  }));
+
+  const sourcesBreakdown = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    { $project: { host: { $ifNull: [{ $arrayElemAt: [{ $split: [{ $replaceAll: { input: { $ifNull: ["$referrer", ""] }, find: "https://", replacement: "" } }, "/"] }, 0] }, "direct"] } } },
+    { $group: { _id: { $cond: [{ $eq: ["$host", ""] }, "direct", "$host"] }, sessions: { $sum: 1 } } },
+    { $sort: { sessions: -1, _id: 1 } },
+    { $limit: 5 },
+  ]);
+
+  const trafficSources = sourcesBreakdown.map((item) => ({
+    source: String(item._id || "direct"),
+    sessions: Number(item.sessions) || 0,
+  }));
+
+  const browserBreakdown = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", browser: { $ne: null }, createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    { $group: { _id: "$browser", count: { $sum: 1 } } },
+    { $sort: { count: -1, _id: 1 } },
+  ]);
+
+  const totalPageViews = Math.max(currentViews, 1);
+  const browsers = browserBreakdown.map((item) => ({
+    label: String(item._id || "Unknown"),
+    share: Number(((Number(item.count) / totalPageViews) * 100).toFixed(1)),
+  }));
+
+  const audienceMixBreakdown = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", device: { $ne: null }, createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    { $group: { _id: "$device", count: { $sum: 1 } } },
+    { $sort: { count: -1, _id: 1 } },
+  ]);
+
+  const totalAudience = Math.max(audienceMixBreakdown.reduce((sum, item) => sum + Number(item.count || 0), 0), 1);
+  const audienceMix = audienceMixBreakdown.map((item) => ({
+    label: String(item._id || "Unknown"),
+    share: Number(((Number(item.count) / totalAudience) * 100).toFixed(1)),
+  }));
+
+  const referrerBreakdown = await AnalyticsEvent.aggregate([
+    { $match: { type: "page_view", referrer: { $ne: null }, createdAt: { $gte: currentWindow.start, $lte: currentWindow.end } } },
+    {
+      $project: {
+        host: {
+          $cond: [
+            { $regexMatch: { input: { $ifNull: ["$referrer", ""] }, regex: /^https?:\/\//i } },
+            { $arrayElemAt: [{ $split: [{ $replaceAll: { input: { $ifNull: ["$referrer", ""] }, find: "https://", replacement: "" } }, "/"] }, 0] },
+            "direct",
+          ],
+        },
+      },
+    },
+    { $match: { host: { $ne: "direct" } } },
+    { $group: { _id: "$host", sessions: { $sum: 1 } } },
+    { $sort: { sessions: -1, _id: 1 } },
+    { $limit: 5 },
+  ]);
+
+  const topReferrers = referrerBreakdown.map((item) => ({
+    host: String(item._id || "direct"),
+    sessions: Number(item.sessions) || 0,
+  }));
+
+  const totalPageTraffic = Math.max(currentViews, 1);
+  const hasPerformanceData = false;
+  const webVitals = hasPerformanceData ? [
+    { label: "LCP", name: "Largest Contentful Paint", value: "1.9s", delta: 18, deltaLabel: "faster vs prior month", suffix: "ms" },
+    { label: "INP", name: "Interaction to Next Paint", value: "142ms", delta: 11, deltaLabel: "faster vs prior month", suffix: "ms" },
+    { label: "CLS", name: "Cumulative Layout Shift", value: "0.04", delta: 0.05, deltaLabel: "lower vs prior month", suffix: "" },
+  ] : [];
+
   return {
     summary: {
       totalViews: currentViews,
@@ -214,7 +360,17 @@ export async function getAnalyticsOverview(range: AnalyticsRange = "30d") {
       path: event.path,
       createdAt: event.createdAt,
       referrer: event.referrer,
+      userAgent: event.userAgent,
     })),
+    dashboard: {
+      topPages,
+      topCountries,
+      audienceMix: audienceMix.length ? audienceMix : [],
+      sources: trafficSources,
+      browsers: browsers.length ? browsers : [],
+      topReferrers,
+      webVitals,
+    },
   };
 }
 
@@ -227,9 +383,16 @@ export async function recordAnalyticsEvent(
     userAgent?: string | null;
     sessionId?: string | null;
     visitorId?: string | null;
+    country?: string | null;
+    browser?: string | null;
+    device?: string | null;
+    ip?: string | null;
   },
 ) {
   await dbConnect();
+
+  const browser = input.browser ?? inferBrowser(input.userAgent ?? null);
+  const device = input.device ?? inferDevice(input.userAgent ?? null);
 
   const event = new AnalyticsEvent({
     type: input.type,
@@ -239,6 +402,10 @@ export async function recordAnalyticsEvent(
     visitorId: input.visitorId ?? null,
     referrer: input.referrer ?? null,
     userAgent: input.userAgent ?? null,
+    browser,
+    device,
+    country: input.country ?? null,
+    ip: input.ip ?? null,
     createdAt: new Date(),
   });
 
@@ -253,6 +420,13 @@ export async function trackPageViewForRequest(path: string, postId?: string | nu
   const referrer = headersList.get("referer") ?? undefined;
   const sessionId = cookieStore.get("revile_session")?.value ?? crypto.randomUUID();
   const visitorId = cookieStore.get("revile_visitor")?.value ?? crypto.randomUUID();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headersList.get("x-real-ip") ||
+    undefined;
+  const country = getCountryFromHeaders(headersList) ?? undefined;
+  const browser = inferBrowser(userAgent ?? null);
+  const device = inferDevice(userAgent ?? null);
 
   if (!cookieStore.get("revile_session")) {
     cookieStore.set("revile_session", sessionId, { path: "/", maxAge: 60 * 60 * 24 * 30, httpOnly: true, sameSite: "lax" });
@@ -270,6 +444,10 @@ export async function trackPageViewForRequest(path: string, postId?: string | nu
     userAgent,
     sessionId,
     visitorId,
+    browser,
+    device,
+    country,
+    ip,
   });
 }
 
