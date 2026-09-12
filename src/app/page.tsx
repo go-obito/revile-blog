@@ -12,23 +12,40 @@ const NAV_ITEMS = [
   { label: "Football", href: "/tags/football" },
 ];
 
-export default async function HomePage() {
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }> | { q?: string };
+}) {
+  const { q } = (await searchParams) as { q?: string };
+  const query = q?.trim() ?? "";
   let items: Awaited<ReturnType<typeof serializePost>>[] = [];
+  let loadError = false;
 
   try {
     await dbConnect();
-    const posts = await Post.find({ status: "published" })
+    const filter: Record<string, unknown> = { status: "published" };
+    if (query) {
+      const rx = new RegExp(escapeRegExp(query), "i");
+      filter.$or = [{ title: rx }, { excerpt: rx }, { body: rx }, { tags: rx }];
+    }
+    const posts = await Post.find(filter)
       .sort({ publishedAt: -1, createdAt: -1 })
       .limit(8)
       .lean();
 
     items = posts.map((post) => serializePost(post as Parameters<typeof serializePost>[0]));
   } catch {
+    loadError = true;
     items = [];
   }
 
-  const trending = items[0];
-  const rest = items.slice(1);
+  const trending = query ? undefined : items[0];
+  const rest = query ? items : items.slice(1);
 
   return (
     <main className="news-shell min-h-screen text-slate-900">
@@ -48,10 +65,12 @@ export default async function HomePage() {
               ))}
             </nav>
 
-            <form className="order-2 md:order-3 flex items-center gap-1 sm:gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3 sm:py-2 md:w-72">
-              <span className="text-base sm:text-lg text-slate-400 flex-shrink-0">⌕</span>
+            <form action="/" method="get" className="order-2 md:order-3 flex items-center gap-1 sm:gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3 sm:py-2 md:w-72">
+              <span className="text-base sm:text-lg text-slate-400 flex-shrink-0">â</span>
               <input
                 type="search"
+                name="q"
+                defaultValue={query}
                 aria-label="Search stories"
                 placeholder="Search"
                 className="w-full bg-transparent text-xs sm:text-sm text-slate-700 outline-none placeholder:text-slate-400"
@@ -60,8 +79,32 @@ export default async function HomePage() {
           </div>
         </header>
 
+        {query ? (
+          <section className="mt-4 sm:mt-6 lg:mt-8">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg sm:text-2xl font-bold text-slate-900">
+                Results for â{query}â
+              </h2>
+              <Link href="/" className="text-xs sm:text-sm font-medium text-slate-600 transition hover:text-slate-900">
+                Clear search
+              </Link>
+            </div>
+            {rest.length === 0 && !loadError ? (
+              <div className="story-card mt-4 rounded-[28px] bg-white p-6 sm:p-8 text-center text-slate-600">
+                <p className="text-sm sm:text-base">No stories match your search.</p>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {!query ? (
         <section className="mt-4 sm:mt-6 lg:mt-8">
-          {trending ? (
+          {loadError ? (
+            <div className="story-card rounded-[28px] bg-white p-6 sm:p-8 text-center text-slate-600">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Stories could not be loaded.</h2>
+              <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-600">Please try again in a moment.</p>
+            </div>
+          ) : trending ? (
             <div className="story-card overflow-hidden rounded-[28px] bg-white p-3 sm:p-6">
               <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.35fr_0.65fr]">
                 <div className="relative min-h-[180px] sm:min-h-[260px] overflow-hidden rounded-[22px] bg-slate-100">
@@ -104,6 +147,7 @@ export default async function HomePage() {
             </div>
           )}
         </section>
+        ) : null}
 
         {rest.length > 0 ? (
           <section className="mt-6 sm:mt-8 lg:mt-10 grid gap-4 sm:gap-6 lg:grid-cols-2">
