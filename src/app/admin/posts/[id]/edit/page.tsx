@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import CoverImageUploader from "@/components/CoverImageUploader";
 import { dbConnect } from "@/lib/db";
 import { Post } from "@/lib/models/Post";
 import { verifySessionToken } from "@/lib/auth";
@@ -48,7 +49,9 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Cover image URL
-                <input name="coverImageUrl" defaultValue={String(post.coverImageUrl ?? "")} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white" />
+                <div className="mt-2">
+                  <CoverImageUploader name="coverImageUrl" initialValue={String(post.coverImageUrl ?? "")} placeholder="/uploads/cover.jpg" />
+                </div>
               </label>
             </div>
 

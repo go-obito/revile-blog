@@ -12,6 +12,7 @@ import {
   FiType,
   FiUploadCloud,
 } from "react-icons/fi";
+import CoverImageUploader from "@/components/CoverImageUploader";
 
 const starterBody = `# The lead starts here
 
@@ -177,7 +178,7 @@ export default function WriterEditor() {
 
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-medium text-slate-600">Cover image</span>
-                  <input name="coverImageUrl" placeholder="/uploads/cover.jpg" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-blue-400" />
+                  <CoverImageUploader name="coverImageUrl" placeholder="/uploads/cover.jpg" />
                 </label>
 
                 <label className="block">
