@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export const SESSION_COOKIE = "session";
+export const WRITER_APPROVAL_EMAIL = process.env.WRITER_APPROVAL_EMAIL ?? "michaelmawuli182@gmail.com";
 
 export type AdminSession = {
   sub: string;
@@ -46,6 +47,21 @@ export async function getSession(): Promise<AdminSession | null> {
 
 export async function requireAdmin(): Promise<AdminSession | null> {
   return getSession();
+}
+
+export function buildApprovalMailto(subject: string, body?: string) {
+  const message = body ?? "Hi, I'd like to submit writing for approval.";
+  return `mailto:${WRITER_APPROVAL_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+}
+
+export async function getWriterDeskLink() {
+  const session = await getSession();
+  return session ? "/admin" : buildApprovalMailto("Writing approval", "Hi, I'd like to submit writing for approval.");
+}
+
+export async function getAdminDeskLink() {
+  const session = await getSession();
+  return session ? "/admin" : buildApprovalMailto("Admin access request", "Hi, I'd like to request admin access or write approval.");
 }
 
 export function sessionCookieOptions() {

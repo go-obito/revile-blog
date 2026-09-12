@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getAdminDeskLink, getWriterDeskLink } from "@/lib/auth";
 
 const NAV_ITEMS = [
 	{ label: "Latest", href: "/" },
@@ -8,7 +9,10 @@ const NAV_ITEMS = [
 	{ label: "About", href: "/about" },
 ];
 
-export function Footer() {
+export async function Footer() {
+	const writerDeskHref = await getWriterDeskLink();
+	const adminDeskHref = await getAdminDeskLink();
+
 	return (
 		<footer className="mt-16">
 			<div className="mx-auto max-w-7xl rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.06)] backdrop-blur-sm">
@@ -38,9 +42,9 @@ export function Footer() {
 						<a href="mailto:hello@revile.com" className="transition hover:text-slate-900">
 							Contact
 						</a>
-						<Link href="/admin/login" className="transition hover:text-slate-900">
+						<a href={writerDeskHref} className="transition hover:text-slate-900">
 							Writer desk
-						</Link>
+						</a>
 					</div>
 				</div>
 
@@ -53,9 +57,9 @@ export function Footer() {
 						<Link href="/about" className="hover:text-slate-900">
 							Terms
 						</Link>
-						<Link href="/admin/login" className="hover:text-slate-900">
+						<a href={adminDeskHref} className="hover:text-slate-900">
 							Admin
-						</Link>
+						</a>
 					</div>
 				</div>
 			</div>
