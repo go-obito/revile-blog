@@ -1,10 +1,19 @@
-import { LayoutGridIcon, BarChart3Icon, BriefcaseIcon, UsersIcon, PlugIcon, KeyRoundIcon, SettingsIcon, SendIcon, HelpCircleIcon, BookOpenIcon } from "lucide-react";
+import {
+	LayoutGridIcon,
+	BarChart3Icon,
+	MessageSquareTextIcon,
+	SparklesIcon,
+	PlusIcon,
+	HelpCircleIcon,
+	ExternalLinkIcon,
+} from "lucide-react";
 
 export type SidebarNavItem = {
 	title: string;
 	url: string;
 	icon: React.ReactNode;
 	isActive?: boolean;
+	match?: (pathname: string) => boolean;
 };
 
 export type SidebarNavGroup = {
@@ -14,69 +23,42 @@ export type SidebarNavGroup = {
 
 export const navGroups: SidebarNavGroup[] = [
 	{
-		label: "Product",
+		label: "Content",
 		items: [
 			{
 				title: "Dashboard",
-				url: "#/overview",
-				icon: (
-					<LayoutGridIcon
-					/>
-				),
-				isActive: true,
+				url: "/admin",
+				icon: <LayoutGridIcon />,
+				match: (pathname) => pathname === "/admin",
 			},
 			{
-				title: "Analytics",
-				url: "#/analytics",
-				icon: (
-					<BarChart3Icon
-					/>
-				),
+				title: "New post",
+				url: "/admin/posts/new",
+				icon: <PlusIcon />,
+				match: (pathname) => pathname === "/admin/posts/new",
 			},
 			{
-				title: "Projects",
-				url: "#/projects",
-				icon: (
-					<BriefcaseIcon
-					/>
-				),
-			},
-			{
-				title: "Team",
-				url: "#/team",
-				icon: (
-					<UsersIcon
-					/>
-				),
-			},
-			{
-				title: "Integrations",
-				url: "#/integrations",
-				icon: (
-					<PlugIcon
-					/>
-				),
-			},
-			{
-				title: "API Keys",
-				url: "#/api-keys",
-				icon: (
-					<KeyRoundIcon
-					/>
-				),
+				title: "Comments",
+				url: "/admin/comments",
+				icon: <MessageSquareTextIcon />,
+				match: (pathname) => pathname.startsWith("/admin/comments"),
 			},
 		],
 	},
 	{
-		label: "Administration",
+		label: "Insights",
 		items: [
 			{
-				title: "Settings",
-				url: "#/settings",
-				icon: (
-					<SettingsIcon
-					/>
-				),
+				title: "Analytics",
+				url: "/admin/analytics",
+				icon: <BarChart3Icon />,
+				match: (pathname) => pathname.startsWith("/admin/analytics"),
+			},
+			{
+				title: "Insights",
+				url: "/admin/insights",
+				icon: <SparklesIcon />,
+				match: (pathname) => pathname.startsWith("/admin/insights"),
 			},
 		],
 	},
@@ -84,28 +66,14 @@ export const navGroups: SidebarNavGroup[] = [
 
 export const footerNavLinks: SidebarNavItem[] = [
 	{
-		title: "Feedback",
-		url: "#/feedback",
-		icon: (
-			<SendIcon data-icon="inline-start" />
-		),
+		title: "View site",
+		url: "/",
+		icon: <ExternalLinkIcon data-icon="inline-start" />,
 	},
 	{
-		title: "Help Center",
-		url: "#/help",
-		icon: (
-			<HelpCircleIcon
-			/>
-		),
-	},
-
-	{
-		title: "Documentation",
-		url: "#/documentation",
-		icon: (
-			<BookOpenIcon
-			/>
-		),
+		title: "Help",
+		url: "/about",
+		icon: <HelpCircleIcon />,
 	},
 ];
 
@@ -113,3 +81,11 @@ export const navLinks: SidebarNavItem[] = [
 	...navGroups.flatMap((group) => group.items),
 	...footerNavLinks,
 ];
+
+export function resolveActiveNavItem(pathname: string) {
+	return (
+		navLinks.find((item) => item.match?.(pathname)) ??
+		navLinks.find((item) => item.url === pathname) ??
+		null
+	);
+}

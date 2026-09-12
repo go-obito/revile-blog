@@ -1,14 +1,18 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
-import { navLinks } from "@/components/app-shared";
-import { SearchIcon, BellIcon, HeadsetIcon } from "lucide-react";
-
-const activeItem = navLinks.find((item) => item.isActive);
+import { resolveActiveNavItem } from "@/components/app-shared";
+import { BellIcon, HeadsetIcon, SearchIcon } from "lucide-react";
 
 export function AppHeader() {
+	const pathname = usePathname();
+	const activeItem = resolveActiveNavItem(pathname);
+
 	return (
 		<header
 			className={cn(
@@ -25,16 +29,13 @@ export function AppHeader() {
 			</div>
 			<div className="flex items-center gap-2">
 				<Button aria-label="Search" size="icon" variant="ghost">
-					<SearchIcon
-					/>
+					<SearchIcon />
 				</Button>
 				<Button aria-label="Notifications" size="icon" variant="ghost">
-					<BellIcon
-					/>
+					<BellIcon />
 				</Button>
-				<Button aria-label="Support" size="icon" variant="ghost">
-					<HeadsetIcon
-					/>
+				<Button aria-label="Support" size="icon" variant="ghost" render={<a href="/about" />} nativeButton={false}>
+					<HeadsetIcon />
 				</Button>
 			</div>
 		</header>

@@ -1,9 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
 	Avatar,
 	AvatarFallback,
-	AvatarImage,
 } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -19,33 +19,55 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { ChevronsUpDownIcon, SparklesIcon, UserIcon, BellIcon, CreditCardIcon, SettingsIcon, LifeBuoyIcon, LogOutIcon } from "lucide-react";
+import {
+	ChevronsUpDownIcon,
+	ExternalLinkIcon,
+	LogOutIcon,
+	SettingsIcon,
+	UserIcon,
+} from "lucide-react";
 
-type UserType = {
-	name: string;
-	email: string;
-	avatar: string;
-};
+function displayNameFromEmail(email: string) {
+	const local = email.includes("@") ? email.split("@")[0] : email;
+	return local
+		.replace(/[._-]/g, " ")
+		.replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
-const user: UserType = {
-	name: "Shaban Haider",
-	email: "shaban@efferd.com",
-	avatar: "https://github.com/shabanhr.png",
-};
-
-export function NavUser() {
+export function NavUser({ email }: { email: string }) {
 	const { isMobile } = useSidebar();
+	const router = useRouter();
+	const name = displayNameFromEmail(email || "Admin");
+	const initials = name
+		.split(" ")
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase() ?? "")
+		.join("") || "A";
+
+	async function handleLogout() {
+		await fetch("/api/auth/logout", { method: "POST" });
+		router.push("/admin/login");
+		router.refresh();
+	}
 
 	return (
 		<SidebarMenu className="border-t p-2">
 			<SidebarMenuItem>
 				<DropdownMenu>
-					<DropdownMenuTrigger render={<SidebarMenuButton className="text-muted-foreground" />}><Avatar className="size-5">
-                    								<AvatarImage alt={user.name} src={user.avatar} />
-                    								<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    							</Avatar><span className="font-medium text-sm">
-                    								{user.name.split(" ")[0]}
-                    							</span><ChevronsUpDownIcon className="ml-auto size-3!" /></DropdownMenuTrigger>
+					<DropdownMenuTrigger
+						render={
+							<SidebarMenuButton className="text-muted-foreground" />
+						}
+					>
+						<Avatar className="size-5">
+							<AvatarFallback>{initials}</AvatarFallback>
+						</Avatar>
+						<span className="text-sm font-medium">
+							{name.split(" ")[0]}
+						</span>
+						<ChevronsUpDownIcon className="ml-auto size-3!" />
+					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
 						className="min-w-48"
@@ -53,44 +75,30 @@ export function NavUser() {
 						sideOffset={4}
 					>
 						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<SparklesIcon
-								/>
-								Upgrade to Pro
+							<DropdownMenuItem disabled>
+								<UserIcon />
+								{email}
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<UserIcon
-								/>
-								Profile
+							<DropdownMenuItem
+								render={<a href="/admin/analytics" />}
+							>
+								<SettingsIcon />
+								Analytics
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<BellIcon
-								/>
-								Notifications
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<CreditCardIcon
-								/>
-								Billing
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<SettingsIcon
-								/>
-								Settings
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<LifeBuoyIcon
-								/>
-								Help Center
+							<DropdownMenuItem render={<a href="/" />}>
+								<ExternalLinkIcon />
+								View site
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem variant="destructive">
-							<LogOutIcon
-							/>
+						<DropdownMenuItem
+							variant="destructive"
+							onClick={handleLogout}
+						>
+							<LogOutIcon />
 							Log out
 						</DropdownMenuItem>
 					</DropdownMenuContent>
