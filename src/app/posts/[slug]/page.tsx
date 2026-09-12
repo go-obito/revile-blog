@@ -7,6 +7,7 @@ import { Post } from "@/lib/models/Post";
 import { Comment } from "@/lib/models/Comment";
 import { serializeComment } from "@/lib/serialize";
 import { MarkdownView } from "@/components/MarkdownView";
+import { SiteFooter } from "@/components/SiteFooter";
 import { TagPill } from "@/components/TagPill";
 
 const NAV_ITEMS = [
@@ -54,6 +55,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const publishedDate = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Draft";
 
   return (
+    <>
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_35%),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] text-slate-900">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -167,5 +169,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         </article>
       </div>
     </main>
+    <SiteFooter />
+    </>
   );
 }
