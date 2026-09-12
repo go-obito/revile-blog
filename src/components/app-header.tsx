@@ -1,17 +1,24 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { resolveActiveNavItem } from "@/components/app-shared";
-import { BellIcon, HeadsetIcon, SearchIcon } from "lucide-react";
+import { BellIcon, HeadsetIcon, LogOutIcon, SearchIcon } from "lucide-react";
 
 export function AppHeader() {
 	const pathname = usePathname();
 	const activeItem = resolveActiveNavItem(pathname);
+	const router = useRouter();
+
+	async function handleLogout() {
+		await fetch("/api/auth/logout", { method: "POST" });
+		router.push("/admin/login");
+		router.refresh();
+	}
 
 	return (
 		<header
@@ -36,6 +43,9 @@ export function AppHeader() {
 				</Button>
 				<Button aria-label="Support" size="icon" variant="ghost" render={<a href="/about" />} nativeButton={false}>
 					<HeadsetIcon />
+				</Button>
+				<Button aria-label="Log out" size="icon" variant="ghost" onClick={handleLogout}>
+					<LogOutIcon />
 				</Button>
 			</div>
 		</header>
