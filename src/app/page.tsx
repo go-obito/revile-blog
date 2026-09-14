@@ -4,6 +4,7 @@ import { dbConnect } from "@/lib/db";
 import { Post } from "@/lib/models/Post";
 import { serializePost } from "@/lib/serialize";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/site-header";
 
 const NAV_ITEMS = [
   { label: "Latest", href: "/" },
@@ -13,7 +14,7 @@ const NAV_ITEMS = [
 ];
 
 function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\\]\\]/g, "\\\\$&");
 }
 
 export default async function HomePage({
@@ -49,65 +50,63 @@ export default async function HomePage({
 
   return (
     <main className="news-shell min-h-screen text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 pb-0 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-6">
-        <header className="rounded-full border border-slate-200 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm sm:px-4 sm:py-3">
-          <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center justify-between gap-2 sm:gap-3 md:justify-start">
-              <Link href="/" className="logo text-xl font-extrabold tracking-[0.18em] text-slate-900 sm:text-2xl">REVILE</Link>
-              <Link href="/about" className="text-xs sm:text-sm font-medium text-slate-600 transition hover:text-slate-900">About</Link>
-            </div>
-
-            <nav className="order-3 w-full flex flex-wrap items-center gap-2 text-xs sm:gap-3 sm:text-sm font-medium text-slate-600 md:order-2 md:w-auto md:gap-5">
-              {NAV_ITEMS.map((item) => (
-                <Link key={item.label} href={item.href} className="transition hover:text-slate-900 whitespace-nowrap">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            <form action="/" method="get" className="order-2 md:order-3 flex items-center gap-1 sm:gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3 sm:py-2 md:w-72">
-              <span className="text-base sm:text-lg text-slate-400 flex-shrink-0">â</span>
+      <SiteHeader />
+      
+      <div className="container-main pb-0 pt-4 sm:pt-6 lg:pt-8">
+        {/* Search Section */}
+        {!query && (
+          <div className="mb-6 sm:mb-8 lg:mb-10">
+            <form action="/" method="get" className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:py-4">
+              <span className="text-lg text-slate-400 flex-shrink-0">🔍</span>
               <input
                 type="search"
                 name="q"
                 defaultValue={query}
                 aria-label="Search stories"
-                placeholder="Search"
-                className="w-full bg-transparent text-xs sm:text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                placeholder="Search stories..."
+                className="w-full bg-transparent text-sm sm:text-base text-slate-700 outline-none placeholder:text-slate-400"
               />
             </form>
           </div>
-        </header>
+        )}
 
-        {query ? (
-          <section className="mt-4 sm:mt-6 lg:mt-8">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg sm:text-2xl font-bold text-slate-900">
-                Results for â{query}â
-              </h2>
-              <Link href="/" className="text-xs sm:text-sm font-medium text-slate-600 transition hover:text-slate-900">
-                Clear search
-              </Link>
-            </div>
-            {rest.length === 0 && !loadError ? (
-              <div className="story-card mt-4 rounded-[28px] bg-white p-6 sm:p-8 text-center text-slate-600">
-                <p className="text-sm sm:text-base">No stories match your search.</p>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
+        {/* Search Results Header */}
+        {query && (
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              Results for "{query}"
+            </h2>
+            <Link
+              href="/"
+              className="secondary-button text-center sm:text-left"
+            >
+              Clear search
+            </Link>
+          </div>
+        )}
 
-        {!query ? (
-        <section className="mt-4 sm:mt-6 lg:mt-8">
-          {loadError ? (
-            <div className="story-card rounded-[28px] bg-white p-6 sm:p-8 text-center text-slate-600">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Stories could not be loaded.</h2>
-              <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-600">Please try again in a moment.</p>
-            </div>
-          ) : trending ? (
-            <div className="story-card overflow-hidden rounded-[28px] bg-white p-3 sm:p-6">
-              <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-                <div className="relative min-h-[180px] sm:min-h-[260px] overflow-hidden rounded-[22px] bg-slate-100">
+        {/* Empty State */}
+        {rest.length === 0 && !loadError && query && (
+          <div className="story-card rounded-lg bg-slate-50 p-6 sm:p-8 text-center">
+            <p className="text-slate-600 text-sm sm:text-base">No stories match your search.</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {loadError && (
+          <div className="story-card rounded-lg bg-red-50 p-6 sm:p-8 text-center border border-red-200">
+            <h2 className="text-xl sm:text-2xl font-bold text-red-900">Stories could not be loaded</h2>
+            <p className="mt-2 sm:mt-3 text-sm sm:text-base text-red-700">Please try again in a moment.</p>
+          </div>
+        )}
+
+        {/* Trending Post - Featured */}
+        {!query && trending && (
+          <section className="mb-8 sm:mb-10 lg:mb-12">
+            <div className="story-card overflow-hidden rounded-xl bg-white">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.35fr_0.65fr] p-4 sm:p-6 lg:p-8">
+                {/* Image */}
+                <div className="relative min-h-[200px] sm:min-h-[300px] overflow-hidden rounded-lg bg-slate-100">
                   {trending.coverImageUrl ? (
                     <Image
                       src={trending.coverImageUrl}
@@ -115,79 +114,152 @@ export default async function HomePage({
                       fill
                       className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 60vw"
+                      priority
                     />
-                  ) : null}
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300"></div>
+                  )}
                 </div>
 
-                <div className="flex flex-col justify-center">
+                {/* Content */}
+                <div className="flex flex-col justify-center gap-3 sm:gap-4">
+                  {/* Tags */}
                   <div className="flex flex-wrap gap-2">
                     {trending.tags.slice(0, 3).map((tag) => (
-                      <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] hover:border-blue-300">
+                      <Link
+                        key={tag}
+                        href={`/tags/${encodeURIComponent(tag)}`}
+                        className="tag-pill"
+                      >
                         {tag}
                       </Link>
                     ))}
                   </div>
-                  <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.22em] text-slate-500">
-                    {trending.publishedAt ? new Date(trending.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Draft"}
+
+                  {/* Date */}
+                  <p className="text-xs sm:text-sm font-medium uppercase tracking-wide text-slate-500">
+                    {trending.publishedAt
+                      ? new Date(trending.publishedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "Draft"}
                   </p>
-                  <Link href={`/posts/${trending.slug}`} className="mt-2 sm:mt-3 block text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight text-slate-900 hover:text-blue-700">
+
+                  {/* Title */}
+                  <Link
+                    href={`/posts/${trending.slug}`}
+                    className="block text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight text-slate-900 hover:text-blue-600 transition"
+                  >
                     {trending.title}
                   </Link>
-                  <p className="mt-2 sm:mt-4 max-w-xl text-sm sm:text-base leading-6 sm:leading-7 text-slate-600 line-clamp-2 sm:line-clamp-none">{trending.excerpt || "Read the latest story from Revile."}</p>
-                  <Link href={`/posts/${trending.slug}`} className="primary-button nav-cta mt-4 sm:mt-6 inline-flex w-fit items-center rounded-full px-4 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm font-semibold shadow-sm transition">
-                    Read story
+
+                  {/* Excerpt */}
+                  <p className="text-sm sm:text-base leading-6 text-slate-600 line-clamp-3">
+                    {trending.excerpt || "Read the latest story from Revile."}
+                  </p>
+
+                  {/* CTA Button */}
+                  <Link
+                    href={`/posts/${trending.slug}`}
+                    className="primary-button w-fit mt-2 sm:mt-4"
+                  >
+                    Read story →
                   </Link>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="story-card rounded-[28px] bg-white p-6 sm:p-8 text-center text-slate-600">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">No published stories yet.</h2>
-              <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-600">This page stays empty until the first post is published. Once it is live, the latest coverage will appear here automatically.</p>
-            </div>
-          )}
-        </section>
-        ) : null}
+          </section>
+        )}
 
-        {rest.length > 0 ? (
-          <section className="mt-6 sm:mt-8 lg:mt-10 grid gap-4 sm:gap-6 lg:grid-cols-2">
-            {rest.map((post) => (
-              <article key={post.id} className="story-card grid overflow-hidden rounded-[22px] bg-white md:grid-cols-[220px_1fr]">
-                <div className="relative min-h-[150px] sm:min-h-[200px] bg-slate-100">
-                  {post.coverImageUrl ? (
-                    <Image
-                      src={post.coverImageUrl}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 220px"
-                    />
-                  ) : null}
-                </div>
+        {/* Posts Grid */}
+        {rest.length > 0 && (
+          <section className="mb-8 sm:mb-10 lg:mb-12">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-4 sm:mb-6">
+              {query ? "More results" : "Latest stories"}
+            </h2>
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((post) => (
+                <article
+                  key={post.id}
+                  className="story-card overflow-hidden rounded-lg hover:shadow-lg transition-all flex flex-col"
+                >
+                  {/* Image */}
+                  {post.coverImageUrl && (
+                    <div className="relative aspect-video overflow-hidden bg-slate-100">
+                      <Image
+                        src={post.coverImageUrl}
+                        alt={post.title}
+                        fill
+                        className="object-cover hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                  )}
 
-                <div className="flex flex-col justify-between p-4 sm:p-5">
-                  <div>
-                    <div className="flex flex-wrap gap-2">
+                  {/* Content */}
+                  <div className="flex flex-col justify-between flex-grow p-4 sm:p-5">
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {post.tags.slice(0, 2).map((tag) => (
-                        <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700 hover:bg-slate-200">
+                        <Link
+                          key={tag}
+                          href={`/tags/${encodeURIComponent(tag)}`}
+                          className="tag-pill text-xs"
+                        >
                           {tag}
                         </Link>
                       ))}
                     </div>
-                    <p className="mt-2 sm:mt-3 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">
-                      {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Draft"}
+
+                    {/* Meta */}
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
+                      {post.publishedAt
+                        ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "Draft"}
                     </p>
-                    <Link href={`/posts/${post.slug}`} className="mt-1.5 sm:mt-2 block text-lg sm:text-2xl font-bold leading-tight text-slate-900 hover:text-blue-700">
+
+                    {/* Title */}
+                    <Link
+                      href={`/posts/${post.slug}`}
+                      className="block text-lg sm:text-xl font-bold leading-tight text-slate-900 hover:text-blue-600 transition mb-3"
+                    >
                       {post.title}
                     </Link>
-                  </div>
 
-                  <p className="mt-3 sm:mt-4 text-sm sm:text-base leading-6 sm:leading-7 text-slate-600 line-clamp-2">{post.excerpt || "Read the latest story."}</p>
-                </div>
-              </article>
-            ))}
+                    {/* Excerpt */}
+                    <p className="text-sm leading-6 text-slate-600 line-clamp-2 mb-4">
+                      {post.excerpt || "Read the latest story."}
+                    </p>
+
+                    {/* Read More Link */}
+                    <Link
+                      href={`/posts/${post.slug}`}
+                      className="inline-flex font-medium text-blue-600 hover:text-blue-800 transition text-sm"
+                    >
+                      Read story →
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
           </section>
-        ) : null}
+        )}
+
+        {/* No Posts State */}
+        {rest.length === 0 && !query && !loadError && (
+          <div className="story-card rounded-lg bg-slate-50 p-8 sm:p-12 text-center">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">No published stories yet</h2>
+            <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-600">
+              This page will display the latest stories once they are published.
+            </p>
+          </div>
+        )}
 
         <SiteFooter />
       </div>
