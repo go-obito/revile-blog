@@ -5,39 +5,65 @@ import { PublicPost } from "@/lib/serialize";
 
 export function PostCard({ post }: { post: PublicPost }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:shadow-md">
-      {post.coverImageUrl ? (
-        <div className="relative aspect-[16/9] overflow-hidden bg-stone-100">
+    <article className="story-card overflow-hidden rounded-lg flex flex-col h-full hover:shadow-lg transition-all duration-300">
+      {/* Image Container */}
+      {post.coverImageUrl && (
+        <div className="relative aspect-video overflow-hidden bg-slate-100">
           <Image
             src={post.coverImageUrl}
             alt={post.title}
             fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </div>
-      ) : null}
+      )}
 
-      <div className="space-y-4 p-6">
-        <div className="flex flex-wrap gap-2">
-          {post.tags.slice(0, 3).map((tag) => (
-            <TagPill key={tag} tag={tag} />
+      {/* Content Container */}
+      <div className="flex flex-col justify-between flex-grow p-4 sm:p-5">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {post.tags.slice(0, 2).map((tag) => (
+            <Link
+              key={tag}
+              href={`/tags/${encodeURIComponent(tag)}`}
+              className="tag-pill text-xs"
+            >
+              {tag}
+            </Link>
           ))}
         </div>
 
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-            {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Draft"}
-          </p>
-          <Link href={`/posts/${post.slug}`} className="block text-2xl font-semibold tracking-tight text-stone-900 hover:text-stone-600">
-            {post.title}
-          </Link>
-        </div>
+        {/* Date */}
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
+          {post.publishedAt
+            ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "Draft"}
+        </p>
 
-        <p className="text-base leading-7 text-stone-600">{post.excerpt || "Read the latest story."}</p>
+        {/* Title */}
+        <Link
+          href={`/posts/${post.slug}`}
+          className="block text-lg sm:text-xl font-bold leading-tight text-slate-900 hover:text-blue-600 transition mb-3 line-clamp-2"
+        >
+          {post.title}
+        </Link>
 
-        <Link href={`/posts/${post.slug}`} className="inline-flex font-medium text-stone-900 underline decoration-stone-400 underline-offset-4">
-          Read story
+        {/* Excerpt */}
+        <p className="text-sm leading-6 text-slate-600 line-clamp-2 mb-4 flex-grow">
+          {post.excerpt || "Read the latest story."}
+        </p>
+
+        {/* Read More Link */}
+        <Link
+          href={`/posts/${post.slug}`}
+          className="inline-flex font-medium text-blue-600 hover:text-blue-800 transition text-sm"
+        >
+          Read story →
         </Link>
       </div>
     </article>
